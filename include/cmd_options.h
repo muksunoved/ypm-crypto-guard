@@ -1,7 +1,9 @@
 #pragma once
 
 #include <boost/program_options.hpp>
+#include <filesystem>
 #include <string>
+#include <string_view>
 #include <unordered_map>
 
 namespace CryptoGuard {
@@ -17,12 +19,12 @@ public:
         CHECKSUM,
     };
 
-    bool Parse(int argc, char *argv[]);
+    std::tuple<bool, bool> Parse(int argc, char *argv[]);
 
     COMMAND_TYPE GetCommand() const { return command_; }
-    std::string GetInputFile() const { return inputFile_; }
-    std::string GetOutputFile() const { return outputFile_; }
-    std::string GetPassword() const { return password_; }
+    const std::filesystem::path &GetInputFile() const { return inputFile_; }
+    const std::filesystem::path &GetOutputFile() const { return outputFile_; }
+    std::string_view GetPassword() const { return password_; }
 
 private:
     COMMAND_TYPE command_;
@@ -32,9 +34,11 @@ private:
         {"checksum", ProgramOptions::COMMAND_TYPE::CHECKSUM},
     };
 
-    std::string inputFile_;
-    std::string outputFile_;
+    std::filesystem::path inputFile_;
+    std::filesystem::path outputFile_;
     std::string password_;
+
+    std::string commandText_;
 
     boost::program_options::options_description desc_;
 };

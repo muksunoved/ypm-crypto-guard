@@ -33,16 +33,21 @@ AesCipherParams CreateChiperParamsFromPassword(std::string_view password) {
 }
 
 int main(int argc, char *argv[]) {
+    using namespace CryptoGuard;
     try {
 
-        CryptoGuard::ProgramOptions options;
+        ProgramOptions options;
         auto [should_good_exit, parse_result] = options.Parse(argc, argv);
 
         if (should_good_exit) {
+            options.PrintOptionsUsage();
             return 0;
         }
-        if (!parse_result) {
-            return -1;
+
+        if (ProgramOptions::IsError(parse_result)) {
+            options.PrintError(parse_result);
+            options.PrintOptionsUsage();
+            return ProgramOptions::GetErrorCode(parse_result);
         }
         //
         // OpenSSL пример использования:

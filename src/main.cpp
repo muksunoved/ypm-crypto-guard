@@ -49,6 +49,7 @@ int main(int argc, char *argv[]) {
             options.PrintOptionsUsage();
             return ProgramOptions::GetErrorCode(parse_result);
         }
+
         //
         // OpenSSL пример использования:
         //

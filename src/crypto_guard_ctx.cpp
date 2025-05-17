@@ -16,7 +16,7 @@ struct CryptoGuardCtx::Impl {
     Impl() { OpenSSL_add_all_algorithms(); };
     ~Impl() { EVP_cleanup(); }
 
-    using ERROR = CryptoGuardCtx::CryptoGuardException::ERROR;
+    using ERROR = CryptoGuardException::ERROR;
 
     struct AesCipherParams {
         static const size_t KEY_SIZE = 32;             // AES-256 key size
@@ -143,9 +143,9 @@ struct CryptoGuardCtx::Impl {
         }
         return result;
     }
-    void ThrowError(CryptoGuardCtx::CryptoGuardException::ERROR e, const std::string &error_text) {
+    void ThrowError(CryptoGuardException::ERROR e, const std::string &error_text) {
         last_error_ = e;
-        throw CryptoGuardCtx::CryptoGuardException(e, error_text);
+        throw CryptoGuardException(e, error_text);
     }
 
     CryptoGuardException::ERROR last_error_ = ERROR::EALL_OK;

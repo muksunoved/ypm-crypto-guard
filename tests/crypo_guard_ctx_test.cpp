@@ -20,7 +20,7 @@ TEST_F(CryptoGuardCtxTest, ShouldSetInputFileErrorIfEmpty) {
     char tmp;
     fake_stream_in >> tmp; /* Delete null terminator */
 
-    EXPECT_THROW(ctx.EncryptFile(fake_stream_in, fake_stream_out, password), CryptoGuardCtx::CryptoGuardException);
+    ASSERT_THROW(ctx.EncryptFile(fake_stream_in, fake_stream_out, password), CryptoGuardException);
     EXPECT_EQ(ctx.GetLastError(), CryptoGuardCtx::ERROR::EEMPTY_INPUT_FILE);
 }
 

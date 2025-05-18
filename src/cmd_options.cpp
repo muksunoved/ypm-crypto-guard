@@ -2,10 +2,8 @@
 #include <boost/program_options/variables_map.hpp>
 #include <filesystem>
 #include <iostream>
-#include <ostream>
 #include <print>
 #include <string_view>
-#include <tuple>
 
 namespace CryptoGuard {
 
@@ -17,6 +15,7 @@ std::unordered_map<ProgramOptions::ERROR, std::string_view> ProgramOptions::erro
     {ERROR::EOUT_PATH_ERROR,        "output file path error"    },
     {ERROR::ECMD_IS_MISS,           "option command missing"    },
     {ERROR::EWRONG_PASSWORD,        "missing or wrong password" },
+    {ERROR::EINOUT_SAME_FILE,       "output file same as input" },
     {ERROR::EUNKNOWN_ERROR,         "unknown error"             },
     // clang-format on
 
@@ -66,11 +65,17 @@ ProgramOptions::ParseResult ProgramOptions::Parse(int argc, char *argv[]) {
             return ERROR::EINPUT_FILE_ERROR;
         }
 
-        auto parent_path = outputFile_.parent_path();
-        status = fs::status(parent_path);
+        if (command_ == COMMAND_TYPE::ENCRYPT || command_ == COMMAND_TYPE::DECRYPT) {
 
-        if (!fs::is_directory(status)) {
-            return ERROR::EOUT_PATH_ERROR;
+            auto parent_path = outputFile_.parent_path();
+            status = fs::status(parent_path);
+
+            if (!fs::is_directory(status)) {
+                return ERROR::EOUT_PATH_ERROR;
+            }
+            if (inputFile_ == outputFile_) {
+                return ERROR::EINOUT_SAME_FILE;
+            }
         }
         return ERROR::EALL_OK;
     };

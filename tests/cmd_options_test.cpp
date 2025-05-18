@@ -121,4 +121,23 @@ TEST_F(ProgramOptionsTest, ShouldSetErrorIfCmdIsUnknown) {
     EXPECT_EQ(error_code, ProgramOptions::ERROR::EUNSUPPORT_CMD);
 }
 
+TEST_F(ProgramOptionsTest, ShouldSetErrorOutFileSameAsInputFile) {
+    std::vector<char *> fake_argv{
+        (char *)"test ",               /* Program name */
+        (char *)"--command",           /* command option */
+        (char *)"encrypt",             /* unsupported command */
+        (char *)"--password",          /*  password option  */
+        (char *)"12345",               /* small length password */
+        (char *)"--input",             /* input file option */
+        (char *)"./CryptoGuard_tests", /* any real exist file */
+        (char *)"--output",            /* output file option */
+        (char *)"./CryptoGuard_tests", /* any real exist file */
+    };
+
+    auto [result, error_code] = options.Parse(fake_argv.size(), fake_argv.data());
+
+    EXPECT_FALSE(result);
+    EXPECT_EQ(error_code, ProgramOptions::ERROR::EINOUT_SAME_FILE);
+}
+
 }  // namespace CryptoGuard

@@ -1,5 +1,6 @@
 #pragma once
 
+#include "crypto_guard_error.h"
 #include <boost/program_options.hpp>
 #include <cstddef>
 #include <expected>
@@ -15,19 +16,10 @@ public:
     static constexpr size_t kMinPasswordLen = 4;
     static_assert(kMinPasswordLen > 0, "Set minimal password len upper than 0");
 
+    using ERROR = CryptoGuardException::ERROR;
+
     ProgramOptions();
     ~ProgramOptions();
-
-    enum class ERROR : int {
-        EALL_OK = 0,
-        EUNSUPPORT_CMD = 1,
-        EINPUT_FILE_ERROR = 3,
-        EOUT_PATH_ERROR = 4,
-        ECMD_IS_MISS = 5,
-        EWRONG_PASSWORD = 6,
-        ECOMMON_ERROR = 7,
-        EUNKNOWN_ERROR = -1
-    };
 
     using ParseResult = std::tuple<bool, ERROR>;
 

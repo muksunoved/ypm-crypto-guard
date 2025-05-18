@@ -1,5 +1,6 @@
 #pragma once
 
+#include <stdexcept>
 #include <string>
 
 namespace CryptoGuard {
@@ -12,6 +13,7 @@ public:
         ECIPHER_INIT,
         ECIPHER_UPDATE,
         ECIPHER_FINALIZE,
+        ECHIPHER_CREATE_KEY,
         EEMPTY_INPUT_FILE,
         EDIGET_CREATE,
         EDIGEST_INIT,
@@ -30,4 +32,5 @@ private:
     ERROR error_code_ = ERROR::EALL_OK;
     std::string message_;
 };
+
 }  // namespace CryptoGuard

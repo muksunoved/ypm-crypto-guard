@@ -1,4 +1,5 @@
 #include "crypto_guard_ctx.h"
+#include "crypto_guard_error.h"
 #include <cstdio>
 #include <gtest/gtest.h>
 #include <ios>
@@ -38,7 +39,7 @@ TEST_F(CryptoGuardCtxTest, ShouldGetEncrypt) {
     EXPECT_EQ(fake_content_out.length(), 32);
 }
 
-TEST_F(CryptoGuardCtxTest, ShouldGetDecryptToSameString) {
+TEST_F(CryptoGuardCtxTest, ShouldGetDecryptToSameStringAfterEncryptDecrypt) {
 
     std::stringstream fake_stream_in;
     std::stringstream fake_stream_out;
@@ -58,6 +59,30 @@ TEST_F(CryptoGuardCtxTest, ShouldGetDecryptToSameString) {
         EXPECT_EQ(ctx2.GetLastError(), CryptoGuardCtx::ERROR::EALL_OK);
     }
     EXPECT_EQ(fake_stream_in.str(), fake_stream_same.str());
+}
+
+TEST_F(CryptoGuardCtxTest, ShouldNotMatchDecodeWithOriginalIfPassworWrong) {
+    std::stringstream fake_stream_in;
+    std::stringstream fake_stream_out;
+    std::stringstream fake_stream_same;
+    std::string password1("12345");
+    std::string password2("1234a");
+
+    fake_stream_in << "1234567890123445670987656678fgfgrtrtrtrtyuyuyuiui121223ghghghg";
+    {
+        CryptoGuardCtx ctx1;
+
+        EXPECT_NO_THROW(ctx1.EncryptFile(fake_stream_in, fake_stream_out, password1));
+        EXPECT_EQ(ctx1.GetLastError(), CryptoGuardCtx::ERROR::EALL_OK);
+    }
+    {
+        CryptoGuardCtx ctx2;
+
+        ASSERT_THROW(ctx2.DecryptFile(fake_stream_out, fake_stream_same, password2), CryptoGuardException);
+        EXPECT_EQ(ctx2.GetLastError(), CryptoGuardCtx::ERROR::ECIPHER_FINALIZE);
+    }
+    EXPECT_NE(fake_stream_in.str(), fake_stream_same.str());
+
 }
 
 TEST_F(CryptoGuardCtxTest, ShouldGetDigestHexString) {

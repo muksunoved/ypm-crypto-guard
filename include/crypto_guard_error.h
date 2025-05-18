@@ -37,7 +37,7 @@ public:
         message_ = message;
     }
     const char *what() const throw() override { return message_.c_str(); }
-    ERROR get_error() { return error_code_; }
+    int get_error() const { return static_cast<int>(error_code_); }
 
 private:
     ERROR error_code_ = ERROR::EALL_OK;

@@ -1,5 +1,6 @@
 #include "cmd_options.h"
 #include "crypto_guard_ctx.h"
+#include "crypto_guard_error.h"
 #include <array>
 #include <fstream>
 #include <iostream>
@@ -106,11 +107,13 @@ int main(int argc, char *argv[]) {
         default:
             throw std::runtime_error{"Unsupported command"};
         }
-
-    } catch (const std::exception &e) {
+    } catch (const CryptoGuard::CryptoGuardException &e) {
         std::print(std::cerr, "Error: {}\n", e.what());
+        return e.get_error(); 
+    
+    } catch (const std::exception &e) {
+        std::print(std::cerr, "Unhandled Error: {}\n", e.what());
         return 1;
     }
-
     return 0;
 }

@@ -44,14 +44,19 @@ TEST_F(CryptoGuardCtxTest, ShouldGetDecryptToSameString) {
     std::stringstream fake_stream_out;
     std::stringstream fake_stream_same;
     std::string password("12345");
-    fake_stream_in << "1234567890123445670987656678";
+    fake_stream_in << "1234567890123445670987656678fgfgrtrtrtrtyuyuyuiui121223ghghghg";
+    {
+        CryptoGuardCtx ctx1;
 
-    EXPECT_NO_THROW(ctx.EncryptFile(fake_stream_in, fake_stream_out, password));
-    EXPECT_EQ(ctx.GetLastError(), CryptoGuardCtx::ERROR::EALL_OK);
+        EXPECT_NO_THROW(ctx1.EncryptFile(fake_stream_in, fake_stream_out, password));
+        EXPECT_EQ(ctx1.GetLastError(), CryptoGuardCtx::ERROR::EALL_OK);
+    }
+    {
+        CryptoGuardCtx ctx2;
 
-    EXPECT_NO_THROW(ctx.DecryptFile(fake_stream_out, fake_stream_same, password));
-    EXPECT_EQ(ctx.GetLastError(), CryptoGuardCtx::ERROR::EALL_OK);
-
+        EXPECT_NO_THROW(ctx2.DecryptFile(fake_stream_out, fake_stream_same, password));
+        EXPECT_EQ(ctx2.GetLastError(), CryptoGuardCtx::ERROR::EALL_OK);
+    }
     EXPECT_EQ(fake_stream_in.str(), fake_stream_same.str());
 }
 

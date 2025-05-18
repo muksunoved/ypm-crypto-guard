@@ -33,10 +33,46 @@ AesCipherParams CreateChiperParamsFromPassword(std::string_view password) {
     return params;
 }
 
+void GetFileDigest(CryptoGuard::ProgramOptions &options) {
+    std::fstream inFile;
+    CryptoGuard::CryptoGuardCtx cryptoCtx;
+
+    inFile.open(options.GetInputFile(), std::ios::binary | std::ios::in);
+
+    if (!inFile.is_open()) {
+        std::print("Could not open {}\n", options.GetInputFile().string());
+    }
+    std::print("Checksum: {}\n", cryptoCtx.CalculateChecksum(inFile));
+    inFile.close();
+}
+
+void EncryptDecryptFile(CryptoGuard::ProgramOptions &options, bool encrypt) {
+    std::fstream inFile;
+    std::fstream outFile;
+    CryptoGuard::CryptoGuardCtx cryptoCtx;
+
+    inFile.open(options.GetInputFile(), std::ios::binary | std::ios::in);
+    outFile.open(options.GetOutputFile(), std::ios::binary | std::ios::out);
+
+    if (!inFile.is_open()) {
+        std::print("Could not open {}\n", options.GetInputFile().string());
+    }
+    if (!outFile.is_open()) {
+        std::print("Could not open {}\n", options.GetOutputFile().string());
+    }
+
+    if (encrypt) {
+        cryptoCtx.EncryptFile(inFile, outFile, options.GetPassword());
+    } else {
+        cryptoCtx.DecryptFile(inFile, outFile, options.GetPassword());
+    }
+    inFile.close();
+    outFile.close();
+}
+
 int main(int argc, char *argv[]) {
     using namespace CryptoGuard;
     try {
-
         ProgramOptions options;
         auto [should_good_exit, parse_result] = options.Parse(argc, argv);
 
@@ -51,26 +87,20 @@ int main(int argc, char *argv[]) {
             return ProgramOptions::GetErrorCode(parse_result);
         }
 
-        CryptoGuard::CryptoGuardCtx cryptoCtx;
-
         using COMMAND_TYPE = CryptoGuard::ProgramOptions::COMMAND_TYPE;
         switch (options.GetCommand()) {
         case COMMAND_TYPE::ENCRYPT: {
-            std::fstream inFile(options.GetInputFile());
-            std::fstream outFile(options.GetOutputFile());
-            cryptoCtx.EncryptFile(inFile, outFile, options.GetPassword());
+            EncryptDecryptFile(options, true);
             std::print("File encoded successfully\n");
         } break;
 
         case COMMAND_TYPE::DECRYPT: {
-            std::fstream inFile(options.GetInputFile());
-            std::fstream outFile(options.GetOutputFile());
-            cryptoCtx.DecryptFile(inFile, outFile, options.GetPassword());
+            EncryptDecryptFile(options, false);
             std::print("File decoded successfully\n");
         } break;
 
         case COMMAND_TYPE::CHECKSUM:
-            std::print("Checksum: {}\n", "CHECKSUM_NOT_IMPLEMENTED");
+            GetFileDigest(options);
             break;
 
         default:

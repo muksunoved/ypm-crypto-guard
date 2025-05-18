@@ -58,9 +58,9 @@ struct CryptoGuardCtx::Impl {
                                        size_t request_count) {
         size_t real_count = 0;
 
-        uint8_t c;
+        char c;
         while (real_count != request_count) {
-            inStream >> c;
+            inStream.get(c);
             if (inStream.eof() || inStream.fail()) {
                 break;
             }
@@ -86,15 +86,15 @@ struct CryptoGuardCtx::Impl {
 
         int cipher_block_size = EVP_CIPHER_block_size(params.cipher);
 
-        std::vector<unsigned char> outBuf(16 + cipher_block_size);
-        std::vector<unsigned char> inBuf(16);
+        std::vector<unsigned char> outBuf(1024 + cipher_block_size);
+        std::vector<unsigned char> inBuf(1024);
         int outLen = 0;
 
         size_t retries = 0;
         std::pair<bool, size_t> result;
 
-        while ((result = GetNexData(inStream, inBuf, 16)).second) {
-            if (!EVP_CipherUpdate(&*ctx, outBuf.data(), &outLen, inBuf.data(), result.second)) {
+        while ((result = GetNexData(inStream, inBuf, 1024)).second) {
+            if (!EVP_CipherUpdate(ctx.get(), outBuf.data(), &outLen, inBuf.data(), result.second)) {
                 ThrowError(ERROR::ECIPHER_UPDATE, "Cipher update failed.\n" + GetCryptErrors(kMaxCryptErrorList));
             }
             for (int i = 0; i < outLen; ++i) {
@@ -103,7 +103,7 @@ struct CryptoGuardCtx::Impl {
             ++retries;
         }
         if (retries) {
-            if (!EVP_CipherFinal_ex(&*ctx, outBuf.data(), &outLen)) {
+            if (!EVP_CipherFinal_ex(ctx.get(), outBuf.data(), &outLen)) {
                 ThrowError(ERROR::ECIPHER_FINALIZE, "Cipher finalize failed\n" + GetCryptErrors(kMaxCryptErrorList));
             }
             for (int i = 0; i < outLen; ++i) {
@@ -123,7 +123,6 @@ struct CryptoGuardCtx::Impl {
                 break;
 
             ERR_error_string_n(e, buf, 64);
-            std::cout << std::string(buf) << std::endl;
             error_list += std::string(buf) + "\n";
         }
         return error_list;

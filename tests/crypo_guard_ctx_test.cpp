@@ -82,7 +82,6 @@ TEST_F(CryptoGuardCtxTest, ShouldNotMatchDecodeWithOriginalIfPassworWrong) {
         EXPECT_EQ(ctx2.GetLastError(), CryptoGuardCtx::ERROR::ECIPHER_FINALIZE);
     }
     EXPECT_NE(fake_stream_in.str(), fake_stream_same.str());
-
 }
 
 TEST_F(CryptoGuardCtxTest, ShouldGetDigestHexString) {

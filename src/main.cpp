@@ -109,8 +109,8 @@ int main(int argc, char *argv[]) {
         }
     } catch (const CryptoGuard::CryptoGuardException &e) {
         std::print(std::cerr, "Error: {}\n", e.what());
-        return e.get_error(); 
-    
+        return e.get_error();
+
     } catch (const std::exception &e) {
         std::print(std::cerr, "Unhandled Error: {}\n", e.what());
         return 1;

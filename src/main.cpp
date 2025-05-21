@@ -1,6 +1,8 @@
 #include "cmd_options.h"
 #include "crypto_guard_ctx.h"
+#include "crypto_guard_error.h"
 #include <array>
+#include <fstream>
 #include <iostream>
 #include <openssl/evp.h>
 #include <print>
@@ -32,77 +34,86 @@ AesCipherParams CreateChiperParamsFromPassword(std::string_view password) {
     return params;
 }
 
+void GetFileDigest(CryptoGuard::ProgramOptions &options) {
+    std::fstream inFile;
+    CryptoGuard::CryptoGuardCtx cryptoCtx;
+
+    inFile.open(options.GetInputFile(), std::ios::binary | std::ios::in);
+
+    if (!inFile.is_open()) {
+        std::print("Could not open {}\n", options.GetInputFile().string());
+    }
+    std::print("Checksum: {}\n", cryptoCtx.CalculateChecksum(inFile));
+    inFile.close();
+}
+
+void EncryptDecryptFile(CryptoGuard::ProgramOptions &options, bool encrypt) {
+    std::fstream inFile;
+    std::fstream outFile;
+    CryptoGuard::CryptoGuardCtx cryptoCtx;
+
+    inFile.open(options.GetInputFile(), std::ios::binary | std::ios::in);
+    outFile.open(options.GetOutputFile(), std::ios::binary | std::ios::out);
+
+    if (!inFile.is_open()) {
+        std::print("Could not open {}\n", options.GetInputFile().string());
+    }
+    if (!outFile.is_open()) {
+        std::print("Could not open {}\n", options.GetOutputFile().string());
+    }
+
+    if (encrypt) {
+        cryptoCtx.EncryptFile(inFile, outFile, options.GetPassword());
+    } else {
+        cryptoCtx.DecryptFile(inFile, outFile, options.GetPassword());
+    }
+    inFile.close();
+    outFile.close();
+}
+
 int main(int argc, char *argv[]) {
+    using namespace CryptoGuard;
     try {
-        //
-        // OpenSSL пример использования:
-        //
-        std::string input = "01234567890123456789";
-        std::string output;
+        ProgramOptions options;
+        auto [should_good_exit, parse_result] = options.Parse(argc, argv);
 
-        OpenSSL_add_all_algorithms();
-
-        auto params = CreateChiperParamsFromPassword("12341234");
-        params.encrypt = 1;
-        auto *ctx = EVP_CIPHER_CTX_new();
-
-        // Инициализируем cipher
-        EVP_CipherInit_ex(ctx, params.cipher, nullptr, params.key.data(), params.iv.data(), params.encrypt);
-
-        std::vector<unsigned char> outBuf(16 + EVP_MAX_BLOCK_LENGTH);
-        std::vector<unsigned char> inBuf(16);
-        int outLen;
-
-        // Обрабатываем первые N символов
-        EVP_CipherUpdate(ctx, outBuf.data(), &outLen, inBuf.data(), static_cast<int>(16));
-        for (int i = 0; i < outLen; ++i) {
-            output.push_back(outBuf[i]);
+        if (should_good_exit) {
+            options.PrintOptionsUsage();
+            return 0;
         }
 
-        // Обрабатываем оставшиеся символы
-        EVP_CipherUpdate(ctx, outBuf.data(), &outLen, inBuf.data(), static_cast<int>(16));
-        for (int i = 0; i < outLen; ++i) {
-            output.push_back(outBuf[i]);
+        if (ProgramOptions::IsError(parse_result)) {
+            options.PrintError(parse_result);
+            options.PrintOptionsUsage();
+            return ProgramOptions::GetErrorCode(parse_result);
         }
-
-        // Заканчиваем работу с cipher
-        EVP_CipherFinal_ex(ctx, outBuf.data(), &outLen);
-        for (int i = 0; i < outLen; ++i) {
-            output.push_back(outBuf[i]);
-        }
-        EVP_CIPHER_CTX_free(ctx);
-        std::print("String encoded successfully. Result: '{}'\n\n", output);
-        EVP_cleanup();
-        //
-        // Конец примера
-        //
-
-        CryptoGuard::ProgramOptions options;
-
-        CryptoGuard::CryptoGuardCtx cryptoCtx;
 
         using COMMAND_TYPE = CryptoGuard::ProgramOptions::COMMAND_TYPE;
         switch (options.GetCommand()) {
-        case COMMAND_TYPE::ENCRYPT:
+        case COMMAND_TYPE::ENCRYPT: {
+            EncryptDecryptFile(options, true);
             std::print("File encoded successfully\n");
-            break;
+        } break;
 
-        case COMMAND_TYPE::DECRYPT:
+        case COMMAND_TYPE::DECRYPT: {
+            EncryptDecryptFile(options, false);
             std::print("File decoded successfully\n");
-            break;
+        } break;
 
         case COMMAND_TYPE::CHECKSUM:
-            std::print("Checksum: {}\n", "CHECKSUM_NOT_IMPLEMENTED");
+            GetFileDigest(options);
             break;
 
         default:
             throw std::runtime_error{"Unsupported command"};
         }
+    } catch (const CryptoGuard::CryptoGuardException &e) {
+        std::print(std::cerr, "Error: {}\n", e.what());
+        return e.get_error();
 
     } catch (const std::exception &e) {
-        std::print(std::cerr, "Error: {}\n", e.what());
+        std::print(std::cerr, "Unhandled Error: {}\n", e.what());
         return 1;
     }
-
     return 0;
 }

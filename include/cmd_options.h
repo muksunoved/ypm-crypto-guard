@@ -1,15 +1,27 @@
 #pragma once
 
+#include "crypto_guard_error.h"
 #include <boost/program_options.hpp>
+#include <cstddef>
+#include <expected>
+#include <filesystem>
 #include <string>
+#include <string_view>
 #include <unordered_map>
 
 namespace CryptoGuard {
 
 class ProgramOptions {
 public:
+    static constexpr size_t kMinPasswordLen = 4;
+    static_assert(kMinPasswordLen > 0, "Set minimal password len upper than 0");
+
+    using ERROR = CryptoGuardException::ERROR;
+
     ProgramOptions();
     ~ProgramOptions();
+
+    using ParseResult = std::tuple<bool, ERROR>;
 
     enum class COMMAND_TYPE {
         ENCRYPT,
@@ -17,26 +29,37 @@ public:
         CHECKSUM,
     };
 
-    bool Parse(int argc, char *argv[]);
+    [[nodiscard("Should not ingnore result!")]] ParseResult Parse(int argc, char *argv[]);
 
     COMMAND_TYPE GetCommand() const { return command_; }
-    std::string GetInputFile() const { return inputFile_; }
-    std::string GetOutputFile() const { return outputFile_; }
-    std::string GetPassword() const { return password_; }
+    const std::filesystem::path &GetInputFile() const { return inputFile_; }
+    const std::filesystem::path &GetOutputFile() const { return outputFile_; }
+    std::string_view GetPassword() const { return password_; }
+
+    void PrintOptionsUsage();
+    void PrintError(const ERROR &e);
+    static bool IsError(ERROR e) { return e != ERROR::EALL_OK; }
+    static int GetErrorCode(ERROR e) { return static_cast<int>(e); }
 
 private:
+    static std::string_view GetErrorPrefix(const ERROR &e);
     COMMAND_TYPE command_;
     const std::unordered_map<std::string_view, COMMAND_TYPE> commandMapping_ = {
         {"encrypt", ProgramOptions::COMMAND_TYPE::ENCRYPT},
         {"decrypt", ProgramOptions::COMMAND_TYPE::DECRYPT},
         {"checksum", ProgramOptions::COMMAND_TYPE::CHECKSUM},
     };
+    static std::unordered_map<ERROR, std::string_view> errorMapping_;
 
-    std::string inputFile_;
-    std::string outputFile_;
+    std::filesystem::path inputFile_;
+    std::filesystem::path outputFile_;
     std::string password_;
 
+    std::string commandText_;
+
     boost::program_options::options_description desc_;
+
+    std::string lastCommonError_;
 };
 
 }  // namespace CryptoGuard
